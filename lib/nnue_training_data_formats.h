@@ -54,15 +54,12 @@ THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <intrin.h>
 #endif
 
-#define FILES 8
-#define RANKS 8
-#define PIECE_TYPES 6
+#define FILES 9
+#define RANKS 10
+#define PIECE_TYPES 7
 #define PIECE_COUNT 32
 #define POCKETS false
-#define KING_SQUARES FILES * RANKS
-#define DATA_SIZE 512
-
-static_assert(DATA_SIZE % 8 == 0);
+#define KING_SQUARES 9
 
 namespace chess
 {
@@ -497,7 +494,7 @@ namespace binpack
 
         struct PackedSfen
         {
-            uint8_t data[DATA_SIZE / 8];
+            uint8_t data[64];
         };
 
         struct PackedSfenValue
@@ -527,7 +524,7 @@ namespace binpack
 
             // 32 + 2 + 2 + 2 + 1 + 1 = 40bytes
         };
-        static_assert(sizeof(PackedSfenValue) == DATA_SIZE / 8 + 8);
+        static_assert(sizeof(PackedSfenValue) == 72);
         // Class that handles bitstream
 
         // useful when doing aspect encoding
@@ -708,13 +705,13 @@ namespace binpack
                         if (pc != chess::Piece::None)
                             pos.place(pc, sq);
                     }
-                    assert(stream.get_cursor() <= DATA_SIZE);
+                    assert(stream.get_cursor() <= 512);
                 }
             }
 
             for (chess::Color c : { chess::Color::White, chess::Color::Black })
                 for (chess::PieceType pt = chess::PieceType::Pawn; pt <= chess::PieceType::MaxPiece; ++pt)
-                    pos.setHandCount(make_piece(pt, c), static_cast<int>(stream.read_n_bit(DATA_SIZE > 512 ? 7 : 5)));
+                    pos.setHandCount(make_piece(pt, c), static_cast<int>(stream.read_n_bit(5)));
 
             // Castling availability.
             chess::CastlingRights cr = chess::CastlingRights::None;
@@ -757,7 +754,7 @@ namespace binpack
             pos.setFullMove(fullmove);
             pos.setRule50Counter(rule50);
 
-            assert(stream.get_cursor() <= DATA_SIZE);
+            assert(stream.get_cursor() <= 512);
 
             return pos;
         }
